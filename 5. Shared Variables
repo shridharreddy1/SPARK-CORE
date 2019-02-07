@@ -1,0 +1,86 @@
+Shared Variables
+-------------------------------------------------------------------------------------------------------
+ 
+Spark uses a shared-nothing architecture. Data is partitioned across a cluster of nodes and each node in
+a cluster has its own CPU, memory, and storage resources. There is no global memory space that can be
+shared by the tasks. The driver program and job tasks share data through messages.
+For example, if a function argument to an RDD operator references a variable in the driver program,
+Spark sends a copy of that variable along with a task to the executors. Each task gets its own copy of the
+variable and uses it as a read-only variable. Any update made to that variable by a task remains local.
+Changes are not propagated back to the driver program. In addition, Spark ships that variable to a worker
+node at the beginning of every stage.
+This default behavior can be inefficient for some applications. In one use case, the driver program
+shares a large lookup table with the tasks in a job and the job involves several stages. By default, Spark
+automatically sends the driver variables referenced by a task to each executor; however, it does this for each
+stage. Thus, if the lookup table holds 100 MB data and the job involves ten stages, Spark will send the same
+100 MB data to each worker node ten times.
+
+Another use case involves the ability to update a global variable in each task running on different nodes.
+By default, updates made to a variable by a task are not propagated back to the driver program.
+Spark supports the concept of shared variables for these use cases.
+
+>>  Broadcast Variables
+Broadcast variables enable a Spark application to optimize sharing of data between the driver program
+and the tasks executing a job. Spark sends a broadcast variable to a worker node only once and caches it in
+deserialized form as a read-only variable in executor memory. In addition, it uses a more efficient algorithm
+to distribute broadcast variables.
+Note that a broadcast variable is useful if a job consists of multiple stages and tasks across stages
+reference the same driver variable. It is also useful if you do not want the performance hit from having to
+deserialize a variable before running each task. By default, Spark caches a shipped variable in the executor
+memory in serialized form and deserializes it before running each task.
+The SparkContext class provides a method named broadcast for creating a broadcast variable. It takes
+the variable to be broadcasted as an argument and returns an instance of the Broadcast class. A task must
+use the value method of a Broadcast object to access a broadcasted variable.
+Consider an application where we want to generate transaction details from e-commerce transactions. In
+a real-world application, there would be a master customer table, a master item table, and transactions table.
+To keep the example simple, the input data is instead created in the code itself using simple data structures.
+case class Transaction(id: Long, custId: Int, itemId: Int)
+case class TransactionDetail(id: Long, custName: String, itemName: String)
+val customerMap = Map(1 -> "Tom", 2 -> "Harry")
+val itemMap = Map(1 -> "Razor", 2 -> "Blade")
+val transactions = sc.parallelize(List(Transaction(1, 1, 1), Transaction(2, 1, 2)))
+val bcCustomerMap = sc.broadcast(customerMap)
+val bcItemMap = sc.broadcast(itemMap)
+val transactionDetails = transactions.map{t => TransactionDetail(
+ t.id, bcCustomerMap.value(t.custId), bcItemMap.value(t.itemId))}
+transactionDetails.collect
+The use of broadcast variables enabled us to implement an efficient join between the customer, item
+and transaction dataset. We could have used the join operator from the RDD API, but that would shuffle
+customer, item, and transaction data over the network. Using broadcast variables, we instructed Spark
+to send customer and item data to each node only once and replaced an expensive join operation with a
+simple map operation.
+
+
+>>  Accumulators
+An accumulator is an add-only variable that can be updated by tasks running on different nodes and read by
+the driver program. It can be used to implement counters and aggregations. Spark comes pre-packaged with
+accumulators of numeric types and it supports creation of custom accumulators.
+The SparkContext class provides a method named accumulator for creating an accumulator variable.
+It takes two arguments. The first argument is the initial value for the accumulator and the second argument,
+which is optional, is a name for displaying in the Spark UI. It returns an instance of the Accumulatorclass, 
+which provides the operators for working with an accumulator variable. Tasks can only add a value
+to an accumulator variable using the add method or += operator. Only the driver program can read an
+accumulator’s value using it value method.
+Let’s consider an application that needs to filter out and count the number of invalid customer identifiers
+in a customer table. In a real-world application, we will read the input data from disk and write the filtered
+data back to another file disk. To keep the example simple, we will skip reading and writing to disk.
+case class Customer(id: Long, name: String)
+val customers = sc.parallelize(List(
+ Customer(1, "Tom"),
+ Customer(2, "Harry"),
+ Customer(-1, "Paul")))
+val badIds = sc.accumulator(0, "Bad id accumulator")
+val validCustomers = customers.filter(c => if (c.id < 0) {
+ badIds += 1
+ false
+ } else true
+ )
+val validCustomerIds = validCustomers.count
+val invalidCustomerIds = badIds.value
+Accumulators should be used with caution. Updates to an accumulator within a transformation are not
+guaranteed to be performed exactly once. If a task or stage is re-executed, each task’s update will be applied
+more than once.
+In addition, the update statements are not executed until an RDD action method is called. RDD
+transformations are lazy; accumulator updates within a transformation are not executed right away.
+Therefore, if a driver program uses the value of an accumulator before an action is called, it will get the
+wrong value.
