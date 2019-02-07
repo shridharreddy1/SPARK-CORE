@@ -1,0 +1,56 @@
+RDD Caching Methods
+The RDD class provides two methods to cache an RDD: cache and persist.
+
+1. cache : The cache method stores an RDD in the memory of the executors across a cluster. It essentially materializes
+           an RDD in memory.
+
+The example shown earlier can be optimized using the cache method as shown next.
+val logs = sc.textFile("path/to/log-files")
+val errorsAndWarnings = logs filter { l => l.contains("ERROR") || l.contains("WARN")}
+errorsAndWarnings.cache()
+
+
+
+2. persist : The persist method is a generic version of the cache method. It allows an RDD to be stored in memory,
+             disk, or both. It optionally takes a storage level as an input parameter. If persist is called without any
+             parameter, its behavior is identical to that of the cache method.
+
+val lines = sc.textFile("...")
+lines.persist()
+
+The persist method supports the following common storage options:
+•	 MEMORY_ONLY: When an application calls the persist method with the MEMORY_ONLY
+flag, Spark stores RDD partitions in memory on the worker nodes using deserialized
+Java objects. If an RDD partition does not fit in memory on a worker node, it is
+computed on the fly when needed.
+val lines = sc.textFile("...")
+lines.persist(MEMORY_ONLY)
+
+•	 DISK_ONLY: If persist is called with the DISK_ONLY flag, Spark materializes RDD
+partitions and stores them in a local file system on each worker node. This option
+can be used to persist intermediate RDDs so that subsequent actions do not have to
+start computation from the root RDD.
+
+•	 MEMORY_AND_DISK: In this case, Spark stores as many RDD partitions in memory as
+possible and stores the remaining partitions on disk.
+
+•	 MEMORY_ONLY_SER: In this case, Spark stores RDD partitions in memory as serialized
+Java objects. A serialized Java object consumes less memory, but is more CPUintensive
+to read. This option allows a trade-off between memory consumption and
+CPU utilization.
+
+•	 MEMORY_AND_DISK_SER: Spark stores in memory as serialized Java objects as many
+ RDD partitions as possible. The remaining partitions are saved on disk.
+
+
+RDD Caching Is Fault Tolerant ----------------------------
+Fault tolerance is important in a distributed environment. Earlier you learned how Spark automatically moves
+a compute job to another node when a node fails. Spark’s RDD caching mechanism is also fault tolerant.
+A Spark application will not crash if a node with cached RDD partitions fails. Spark automatically
+recreates and caches the partitions stored on the failed node on another node. Spark uses RDD lineage
+information to recompute lost cached partitions.
+
+Cache Memory Management ---------------------------
+Spark automatically manages cache memory using LRU (least recently used) algorithm. It removes old
+RDD partitions from cache memory when needed. In addition, the RDD API includes a method called
+unpersist(). An application can call this method to manually remove RDD partitions from memory.
