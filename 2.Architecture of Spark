@@ -1,0 +1,52 @@
+Architecture of Spark
+-------------------------------------------------------------------------------------------------------------------------
+A Spark application involves five key entities: a driver program, a cluster manager, workers, executors and tasks.
+
+Driver Programs : A driver program is an application that uses Spark as a library. It provides the data processing code that
+Spark executes on the worker nodes. A driver program can launch one or more jobs on a Spark cluster.
+
+Executors: An executor is a JVM (Java virtual machine) process that Spark creates on each worker for an application.
+It executes application code concurrently in multiple threads. It can also cache data in memory or disk.
+An executor has the same lifespan as the application for which it is created. When a Spark application
+terminates, all the executors created for it also terminate.
+
+Tasks: A task is the smallest unit of work that Spark sends to an executor. It is executed by a thread in an executor
+on a worker node. Each task performs some computations to either return a result to a driver program or
+partition its output for shuffle. Spark creates a task per data partition. An executor runs one or more tasks concurrently. 
+The amount of parallelism is determined by the number of partitions. More partitions mean more tasks processing data
+in parallel.
+
+Workers : A worker provides CPU, memory, and storage resources to a Spark application. The workers run a Spark
+application as distributed processes on a cluster of nodes.
+
+Cluster Managers : Spark uses a cluster manager to acquire cluster resources for executing a job. A cluster manager, as the name
+implies, manages computing resources across a cluster of worker nodes. It provides low-level scheduling of
+cluster resources across applications. It enables multiple applications to share cluster resources and run on
+the same worker nodes.Spark currently supports three cluster managers: standalone, Mesos, and YARN. Mesos and YARN
+allow you to run Spark and Hadoop applications simultaneously on the same worker nodes.  
+
+How an Application Works
+
+With the definitions out of the way, I can now describe how a Spark application processes data in parallel
+across a cluster of nodes. When a Spark application is run, Spark connects to a cluster manager and acquires
+executors on the worker nodes. As mentioned earlier, a Spark application submits a data processing
+algorithm as a job. Spark splits a job into a directed acyclic graph (DAG) of stages. It then schedules the
+execution of these stages on the executors using a low-level scheduler provided by a cluster manager. The
+executors run the tasks submitted by Spark in parallel.
+Every Spark application gets its own set of executors on the worker nodes. This design provides a few
+benefits. First, tasks from different applications are isolated from each other since they run in different
+JVM processes. A misbehaving task from one application cannot crash another Spark application. Second,
+scheduling of tasks becomes easier. Spark has to schedule the tasks belonging to only one application at a time.
+It does not have to handle the complexities of scheduling tasks from multiple concurrently running applications.
+However, this design also has one disadvantage. Since applications run in separate JVM processes, they
+cannot easily share data. Even though they may be running on the same worker nodes, they cannot share
+data without writing it to disk. As previously mentioned, writing and reading data from disk are expensive
+operations. Therefore, applications sharing data through disk will experience performance issues.
+
+Data Sources
+
+Spark supports a variety of data sources. The data that you crunch through a Spark application can be
+in HDFS, HBase, Cassandra, Amazon S3 or any other Hadoop-supported data source. Any data source that
+works with Hadoop can be used with Spark core. One of the Spark libraries, Spark SQL, enables Spark to
+support even more data sources.
+
