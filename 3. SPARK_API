@@ -1,0 +1,54 @@
+Application Programming Interface (API)
+
+Spark makes its cluster computing capabilities available to an application in the form of a library. This
+library is written in Scala, but it provides an application programming interface (API) in multiple languages.
+At the time this book is being written, the Spark API is available in Scala, Java, Python, and R. You can
+develop a Spark application in any of these languages.
+The Spark API consists of two important abstractions: SparkContext and Resilient Distributed Datasets
+(RDDs). An application interacts with Spark using these two abstractions. These abstractions allow an
+application to connect to a Spark cluster and use the cluster resources.
+
+SparkContext -------------------------------------------------------
+
+SparkContext is a class defined in the Spark library. It is the main entry point into the Spark library.
+It represents a connection to a Spark cluster. It is also required to create other important objects provided by
+the Spark API.
+A Spark application must create an instance of the SparkContext class. Currently, an application can have
+only one active instance of SparkContext. To create another instance, it must first stop the active instance.
+
+val sc = new SparkContext()
+
+In the below case, SparkContext gets configuration settings such as the address of the Spark master,
+application name, and other settings from system properties. You can also provide configuration parameters
+to SparkContext programmatically using an instance of SparkConf, which is also a class defined in the Spark
+library.
+
+val config = new SparkConf().setMaster("spark://host:port").setAppName("big app")
+val sc = new SparkContext(config)
+
+
+Resilient Distributed Datasets (RDD)-----------------------------
+
+RDD represents a collection of partitioned data elements that can be operated on in parallel. 
+It is the primary data abstraction mechanism in Spark. It is defined as an abstract class in the Spark library.
+Conceptually, RDD is similar to a Scala collection, except that it represents a distributed dataset and it supports lazy operations
+
+>> Immutable: An RDD is an immutable data structure. Once created, it cannot be modified in-place. Basically, an
+			  operation that modifies an RDD returns a new RDD.
+
+>> Partitioned: Data represented by an RDD is split into partitions. These partitions are generally distributed across a cluster
+			  of nodes. However, when Spark is running on a single machine, all the partitions are on that machine.
+
+>> Fault Tolerant: RDD automatically handles node failures. When a node fails, and partitions stored on that node
+                   become inaccessible, Spark reconstructs the lost RDD partitions on another node. Spark stores lineage
+                   information for each RDD. Using this lineage information, it can recover parts of an RDD or even an entire
+                   RDD in the event of node failures.
+
+>> Strongly Typed: The RDD class definition has a type parameter. This allows an RDD to represent data of different types. It is
+ 				   a distributed collection of homogenous elements, which can be of type Integer, Long, Float, String, or a
+				   custom type defined by an application developer. Thus, an application always works with an RDD of some
+				   type. It can be an RDD of Integer, Long, Float, Double, String, or a custom type.
+
+>> In Memory:      The RDD class provides the API for enabling in-memory cluster computing. 
+				   Spark allows RDDs to be cached or persisted in memory. 
+				   As mentioned, operations on an RDD cached in memory are orders of magnitude faster than those operating on a non-cached RDD.`
