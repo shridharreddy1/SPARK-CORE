@@ -1,0 +1,49 @@
+Spark 
+<Big Data Analytics With Spark>
+
+Spark is an in-memory cluster computing framework for processing and analyzing large amounts of data.
+It provides a simple programming interface, which enables an application developer to easily use the CPU,
+memory, and storage resources across a cluster of servers for processing large datasets.
+
+Key Features
+The key features of Spark include the following:
+•	 Easy to use:
+		 > Spark offers a rich application programming interface (API) for developing big data applications; 
+		   it comes with 80-plus data processing operators.
+		 > Hadoop MapReduce requires every problem to be broken down into a sequence of map and reduce jobs. It is hard to express non-trivial algorithms with just map and reduce. The operators provided by Spark make it easier to do complex data
+           processing in Spark than in Hadoop MapReduce.
+         > Spark enables you to write more concise code compared to Hadoop MapReduce, which
+           requires a lot of boilerplate code
+•	 Fast
+		 First, it allows in-memory cluster computing.
+		 Second, it implements an advanced execution engine
+
+•	 General-purpose
+		
+		Spark provides a unified integrated platform for different types of data processing jobs. It can be used
+		for batch processing, interactive analysis, stream processing, machine learning, and graph computing.
+		In contrast, Hadoop MapReduce is designed just for batch processing. Therefore, a developer using
+		MapReduce has to use different frameworks for stream processing and graph computing.
+
+		Spark comes pre-packaged with an integrated set of libraries for batch processing, interactive analysis,
+		stream processing, machine learning, and graph computing. With Spark, you can use a single framework to
+		build a data processing pipeline that involves different types of data processing tasks. There is no need to
+		learn multiple frameworks or deploy separate clusters for different types of data processing jobs. Thus, Spark
+		helps reduce operational complexity and avoids code as well as data duplication.
+
+•	 Scalable
+		
+		Spark is scalable. The data processing capacity of a Spark cluster can be increased by just adding more nodes
+		to a cluster. You can start with a small cluster, and as your dataset grows, you can add more computing
+		capacity. Thus, Spark allows you to scale economically.
+		In addition, Spark makes this feature automatically available to an application. No code change is
+		required when you add a node to a Spark cluster.
+
+
+•	 Fault tolerant
+
+		The hard disk may crash or some other hardware problem may make a node unusable. Spark
+        automatically handles the failure of a node in a cluster. Failure of a node may degrade performance, but will
+        not crash an application.
+        Since Spark automatically handles node failures, an application developer does not have to handle such
+  		failures in his application. It simplifies application code. 		      
